@@ -4,13 +4,14 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/alex1436183/avl_test'  // Репозиторий, из которого будет загружаться код
+                cleanWs() // Удаляем старые файлы
+                git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
+
         stage('Run Script') {
             steps {
                 script {
-                    // Запуск твоего Python скрипта
                     sh 'python tiner.py'
                 }
             }
@@ -19,15 +20,12 @@ pipeline {
 
     post {
         always {
-            // Это всегда будет выполняться после выполнения пайплайна (например, для очистки)
             echo 'Build finished'
         }
         success {
-            // Сообщение при успешной сборке
             echo 'Build was successful!'
         }
         failure {
-            // Сообщение при ошибке сборки
             echo 'Build failed!'
         }
     }
