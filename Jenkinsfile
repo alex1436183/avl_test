@@ -12,7 +12,7 @@ pipeline {
         stage('Run Script') {
             steps {
                 script {
-                    sh 'python3 tiner.py'
+                    sh 'python3 timer.py'
                 }
             }
         }
