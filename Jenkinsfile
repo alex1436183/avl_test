@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/alex1436183/MyRepository.git'  // Репозиторий, из которого будет загружаться код
+                git 'https://github.com/alex1436183/avl_test'  // Репозиторий, из которого будет загружаться код
             }
         }
         stage('Run Script') {
