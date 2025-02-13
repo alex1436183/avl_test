@@ -25,40 +25,18 @@ EOF'''
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                     script {
+                        // Добавляем ключ хоста в known_hosts
+                        sh "ssh-keyscan -H minion >> ~/.ssh/known_hosts"
+
                         // Создаем директорию на удаленной машине
                         sh "ssh -i \$SSH_KEY jenkins@minion 'mkdir -p /path/to/deploy'"
 
                         // Копируем файлы на удаленную машину
                         sh "scp -i \$SSH_KEY ${WORKSPACE}/calculator.py jenkins@minion:/path/to/deploy/"
                         sh "scp -i \$SSH_KEY ${WORKSPACE}/test_calculator.py jenkins@minion:/path/to/deploy/"
-
-                        // Можно добавить другие файлы, если нужно
                     }
                 }
             }
         }
     }
-    post {
-        always {
-            echo 'Build finished'
-        }
-        success {
-            echo 'Build was successful!'
-            emailext(
-                subject: "Jenkins Job SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) успешно выполнен!</p><p>Проверить можно тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
-                to: 'alex1436183@gmail.com',
-                mimeType: 'text/html'
-            )
-        }
-        failure {
-            echo 'Build failed!'
-            emailext(
-                subject: "Jenkins Job FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) завершился с ошибкой!</p><p>Логи можно посмотреть тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
-                to: 'alex1436183@gmail.com',
-                mimeType: 'text/html'
-            )
-        }
-    }
-}
+    post
