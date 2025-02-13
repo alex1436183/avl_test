@@ -34,7 +34,19 @@ EOF'''
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''tar czf - my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p ${env.WORKSPACE}/deploy && tar xzf - -C ${env.WORKSPACE}/deploy"'''
+                    sh '''#!/bin/bash
+                    echo "Checking the current directory contents"
+                    ls -alh ${env.WORKSPACE}  # Печать содержимого текущей директории для диагностики
+
+                    # Проверка наличия директории my_project
+                    if [ -d "${env.WORKSPACE}/my_project" ]; then
+                        echo "Found my_project directory"
+                    else
+                        echo "my_project directory not found"
+                    fi
+
+                    tar czf - ${env.WORKSPACE}/my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p ${env.WORKSPACE}/deploy && tar xzf - -C ${env.WORKSPACE}/deploy"
+                    '''
                 }
             }
         }
