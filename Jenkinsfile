@@ -19,13 +19,38 @@ pipeline {
             }
         }
 
+        stage('Set up Virtual Environment') {
+            steps {
+                script {
+                    // Создаем виртуальное окружение
+                    sh 'python3 -m venv venv'
+                    // Активируем виртуальное окружение
+                    sh 'source venv/bin/activate'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Устанавливаем pytest в виртуальное окружение
+                    sh '''
+                        source venv/bin/activate
+                        python3 -m pip install --upgrade pip
+                        pip install pytest
+                    '''
+                }
+            }
+        }
+
         stage('Test') {
             steps {
                 script {
-                    // Используем python3 -m pip для установки pytest
-                    sh 'python3 -m pip install pytest'
-                    // Запуск тестов
-                    sh 'pytest --maxfail=1 --disable-warnings -q'
+                    // Запуск тестов в виртуальном окружении
+                    sh '''
+                        source venv/bin/activate
+                        pytest --maxfail=1 --disable-warnings -q
+                    '''
                 }
             }
         }
