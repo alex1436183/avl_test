@@ -21,13 +21,15 @@ pipeline {
 EOF'''
             }
         }
+        stage('Create Directory for Deployment') {
+            steps {
+                sh 'ssh -i $SSH_KEY jenkins@minion "mkdir -p ${HOME}/deploy"'
+            }
+        }
         stage('Deploy') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''
-                    ssh -i $SSH_KEY jenkins@minion "mkdir -p ${HOME}/deploy"
-                    tar czf - my_project | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C ${HOME}/deploy"
-                    '''
+                script {
+                    sh '''tar czf - * | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C ${HOME}/deploy"'''
                 }
             }
         }
