@@ -24,8 +24,6 @@ pipeline {
                 script {
                     // Создаем виртуальное окружение
                     sh 'python3 -m venv venv'
-                    // Активируем виртуальное окружение с использованием точки (.)
-                    sh '. venv/bin/activate'
                 }
             }
         }
@@ -33,22 +31,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Устанавливаем pytest в виртуальное окружение
+                    // Устанавливаем pytest в виртуальное окружение и сразу запускаем тесты
                     sh '''
-                        . venv/bin/activate
-                        python3 -m pip install --upgrade pip
-                        pip install pytest
-                    '''
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    // Запуск тестов в виртуальном окружении
-                    sh '''
-                        . venv/bin/activate
+                        . venv/bin/activate && 
+                        python3 -m pip install --upgrade pip && 
+                        pip install pytest && 
                         pytest --maxfail=1 --disable-warnings -q
                     '''
                 }
