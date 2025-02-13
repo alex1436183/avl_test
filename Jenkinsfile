@@ -54,7 +54,9 @@ pipeline {
 
     post {
         always {
+            // Сохраняем отчет о тестах JUnit
             junit '**/target/test-*.xml'
+            // Генерация HTML отчета
             publishHTML([
                 reportDir: 'build/reports',
                 reportFiles: 'index.html',
