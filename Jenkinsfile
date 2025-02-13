@@ -24,23 +24,16 @@ EOF'''
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''#!/bin/bash
-                    echo "Checking the current directory contents"
-                    ls -alh ${WORKSPACE}  # Печать содержимого текущей директории для диагностики
+                    script {
+                        // Создаем директорию на удаленной машине
+                        sh "ssh -i \$SSH_KEY jenkins@minion 'mkdir -p /path/to/deploy'"
 
-                    # Проверка наличия директории my_project
-                    if [ -d "${WORKSPACE}/my_project" ]; then
-                        echo "Found my_project directory"
-                    else
-                        echo "my_project directory not found"
-                    fi
+                        // Копируем файлы на удаленную машину
+                        sh "scp -i \$SSH_KEY ${WORKSPACE}/calculator.py jenkins@minion:/path/to/deploy/"
+                        sh "scp -i \$SSH_KEY ${WORKSPACE}/test_calculator.py jenkins@minion:/path/to/deploy/"
 
-                    # Создаем директорию на удаленной машине
-                    ssh -i $SSH_KEY jenkins@minion "mkdir -p /path/to/deploy"
-
-                    # Архивируем проект и отправляем на удаленную машину
-                    tar czf - ${WORKSPACE}/my_project | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C /path/to/deploy"
-                    '''
+                        // Можно добавить другие файлы, если нужно
+                    }
                 }
             }
         }
