@@ -28,15 +28,12 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Dependencies and Run Tests') {
             steps {
                 script {
-                    // Устанавливаем pytest в виртуальное окружение и сразу запускаем тесты
+                    // Устанавливаем зависимости и сразу запускаем тесты в виртуальном окружении
                     sh '''
-                        . venv/bin/activate && 
-                        python3 -m pip install --upgrade pip && 
-                        pip install pytest && 
-                        pytest --maxfail=1 --disable-warnings -q
+                        bash -c "source venv/bin/activate && pip install --upgrade pip && pip install pytest && pytest --maxfail=1 --disable-warnings -q"
                     '''
                 }
             }
