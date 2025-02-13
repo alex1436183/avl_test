@@ -22,8 +22,8 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Устанавливаем pytest, если он еще не установлен
-                    sh 'pip install pytest'
+                    // Используем python3 -m pip для установки pytest
+                    sh 'python3 -m pip install pytest'
                     // Запуск тестов
                     sh 'pytest --maxfail=1 --disable-warnings -q'
                 }
