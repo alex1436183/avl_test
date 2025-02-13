@@ -1,22 +1,20 @@
 pipeline {
-    agent { label 'minion' }  // Указываем агент с меткой 'minion'
-
-    environment {
-        DEPLOY_KEY = 'deploy-ssh-key' // Указываем ID для секретного ключа Jenkins
-    }
+    agent { label 'minion' }
 
     stages {
         stage('Checkout') {
             steps {
                 cleanWs()  // Удаляем старые файлы
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
+                sh 'ls -la'  // Проверяем, что все файлы на месте
             }
         }
 
-        stage('Compile') {
+        stage('Run Timer Script') {
             steps {
                 script {
-                    sh 'python3 setup.py install'  // Пример компиляции
+                    // Запуск timer.py
+                    sh 'python3 timer.py'
                 }
             }
         }
@@ -24,7 +22,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh 'pytest --maxfail=1 --disable-warnings -q'  // Запуск тестов
+                    sh 'pytest --maxfail=1 --disable-warnings -q'
                 }
             }
         }
@@ -32,7 +30,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Используем SSH-ключи из Jenkins credentials
                     withCredentials([sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         sh """
                             scp -i \$SSH_KEY my_project user@minion:/path/to/deploy
@@ -45,8 +42,8 @@ pipeline {
 
     post {
         always {
-            junit '**/target/test-*.xml'  // Публикуем JUnit отчеты
-            publishHTML([  // Публикуем HTML отчеты
+            junit '**/target/test-*.xml'
+            publishHTML([
                 reportDir: 'build/reports',
                 reportFiles: 'index.html',
                 reportName: 'HTML Report'
