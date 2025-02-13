@@ -4,14 +4,14 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                cleanWs()  // Очистка рабочего пространства
+                cleanWs()
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
 
         stage('Run Calculator Tests') {
             steps {
-                sh 'python3 -m unittest discover -v'  // Запуск тестов для калькулятора
+                sh 'python3 -m unittest discover -v'
             }
         }
 
@@ -21,20 +21,20 @@ pipeline {
 1
 5
 7
-EOF'''  // Пример интерактивного теста для калькулятора
+EOF'''
             }
         }
 
         stage('Create Directory for Deployment') {
             steps {
-                sh 'mkdir -p /path/to/deploy'  // Создание каталога для деплоя
+                sh "mkdir -p ${env.WORKSPACE}/deploy"  // Создание папки в рабочем пространстве Jenkins
             }
         }
 
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''tar czf - my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p /path/to/deploy && tar xzf - -C /path/to/deploy"'''  // Деплой с использованием SSH
+                    sh '''tar czf - my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p ${env.WORKSPACE}/deploy && tar xzf - -C ${env.WORKSPACE}/deploy"'''
                 }
             }
         }
@@ -42,11 +42,11 @@ EOF'''  // Пример интерактивного теста для каль�
 
     post {
         always {
-            echo 'Build finished'  // Сообщение, которое будет выведено всегда
+            echo 'Build finished'
         }
 
         success {
-            echo 'Build was successful!'  // Сообщение об успешной сборке
+            echo 'Build was successful!'
             emailext(
                 subject: "Jenkins Job SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) успешно выполнен!</p><p>Проверить можно тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
@@ -56,7 +56,7 @@ EOF'''  // Пример интерактивного теста для каль�
         }
 
         failure {
-            echo 'Build failed!'  // Сообщение о неудачной сборке
+            echo 'Build failed!'
             emailext(
                 subject: "Jenkins Job FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) завершился с ошибкой!</p><p>Логи можно посмотреть тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
