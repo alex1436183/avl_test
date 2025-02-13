@@ -22,6 +22,9 @@ pipeline {
         stage('Test') {
             steps {
                 script {
+                    // Устанавливаем pytest, если он еще не установлен
+                    sh 'pip install pytest'
+                    // Запуск тестов
                     sh 'pytest --maxfail=1 --disable-warnings -q'
                 }
             }
