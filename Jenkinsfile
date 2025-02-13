@@ -25,12 +25,6 @@ EOF'''
             }
         }
 
-        stage('Create Directory for Deployment') {
-            steps {
-                sh "mkdir -p ${WORKSPACE}/deploy"  // Создание папки в рабочем пространстве Jenkins
-            }
-        }
-
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
@@ -38,14 +32,11 @@ EOF'''
                     echo "Checking the current directory contents"
                     ls -alh ${WORKSPACE}  # Печать содержимого текущей директории для диагностики
 
-                    # Проверка наличия директории my_project
-                    if [ -d "${WORKSPACE}/my_project" ]; then
-                        echo "Found my_project directory"
-                    else
-                        echo "my_project directory not found"
-                    fi
+                    # Создаём директорию на удалённой машине
+                    ssh -i $SSH_KEY jenkins@minion "mkdir -p /path/to/deploy"
 
-                    tar czf - ${WORKSPACE}/my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p ${WORKSPACE}/deploy && tar xzf - -C ${WORKSPACE}/deploy"
+                    # Архивируем проект и отправляем на удалённую машину
+                    tar czf - ${WORKSPACE} | ssh -i $SSH_KEY jenkins@minion "mkdir -p /path/to/deploy && tar xzf - -C /path/to/deploy"
                     '''
                 }
             }
