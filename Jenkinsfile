@@ -23,8 +23,8 @@ EOF'''
         }
         stage('Deploy') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh "scp -i \$SSH_KEY my_project user@minion:/path/to/deploy"
+                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh "scp -i \$SSH_KEY my_project jenkins@minion:/path/to/deploy"
                 }
             }
         }
