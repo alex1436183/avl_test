@@ -7,6 +7,11 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
+        stage('Create Directory for Deployment') {
+            steps {
+                sh '''ssh -i $SSH_KEY jenkins@minion "mkdir -p \$HOME/deploy"'''
+            }
+        }
         stage('Run Calculator Tests') {
             steps {
                 sh 'python3 -m unittest discover -v'
@@ -21,16 +26,9 @@ pipeline {
 EOF'''
             }
         }
-        stage('Create Directory for Deployment') {
-            steps {
-                sh 'ssh -i $SSH_KEY jenkins@minion "mkdir -p ${HOME}/deploy"'
-            }
-        }
         stage('Deploy') {
             steps {
-                script {
-                    sh '''tar czf - * | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C ${HOME}/deploy"'''
-                }
+                sh '''tar czf - . | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C \$HOME/deploy"'''
             }
         }
     }
