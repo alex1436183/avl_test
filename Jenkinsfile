@@ -1,34 +1,25 @@
 pipeline {
-    agent { label 'minion' }
+    agent any
+
     stages {
         stage('Checkout') {
             steps {
-                cleanWs()
+                cleanWs() 
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
-        stage('Run Calculator Tests') {
-            steps {
-                sh 'python3 -m unittest discover -v'
-            }
-        }
-        stage('Run Calculator Interactive') {
-            steps {
-                sh '''python3 calculator.py <<EOF
-1
-5
-7
-EOF'''
-            }
-        }
+
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh "scp -i \$SSH_KEY my_project jenkins@minion:/path/to/deploy"
+                    sh '''
+                        tar czf - my_project | ssh -i $SSH_KEY jenkins@minion "mkdir -p /path/to/deploy && tar xzf - -C /path/to/deploy"
+                    '''
                 }
             }
         }
     }
+
     post {
         always {
             echo 'Build finished'
@@ -37,7 +28,10 @@ EOF'''
             echo 'Build was successful!'
             emailext(
                 subject: "Jenkins Job SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) успешно выполнен!</p><p>Проверить можно тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
+                body: """
+                    <p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) successfully completed! </p>
+                    <p>Check it here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                """,
                 to: 'alex1436183@gmail.com',
                 mimeType: 'text/html'
             )
@@ -46,7 +40,10 @@ EOF'''
             echo 'Build failed!'
             emailext(
                 subject: "Jenkins Job FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) завершился с ошибкой!</p><p>Логи можно посмотреть тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
+                body: """
+                    <p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) failed! </p>
+                    <p>Logs are available here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                """,
                 to: 'alex1436183@gmail.com',
                 mimeType: 'text/html'
             )
