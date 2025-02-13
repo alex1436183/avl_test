@@ -7,11 +7,6 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
-        stage('Run Timer Script') {
-            steps {
-                sh 'python3 timer.py'
-            }
-        }
         stage('Run Calculator Tests') {
             steps {
                 sh 'python3 -m unittest discover -v'
