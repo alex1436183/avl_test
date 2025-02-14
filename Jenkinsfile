@@ -1,5 +1,8 @@
 pipeline {
     agent { label 'minion' }
+    environment {
+        DEPLOY_DIR = "${env.WORKSPACE}/deploy"
+    }
     stages {
         stage('Checkout') {
             steps {
@@ -9,7 +12,10 @@ pipeline {
         }
         stage('Create Directory for Deployment') {
             steps {
-                sh '''ssh -i $SSH_KEY jenkins@minion "mkdir -p \$HOME/deploy"'''
+                script {
+                    // Проверяем и создаем директорию на удаленной машине
+                    sh '''ssh -i $SSH_KEY jenkins@minion "mkdir -p \$HOME/deploy"'''
+                }
             }
         }
         stage('Run Calculator Tests') {
@@ -28,7 +34,10 @@ EOF'''
         }
         stage('Deploy') {
             steps {
-                sh '''tar czf - . | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C \$HOME/deploy"'''
+                script {
+                    // Архивируем проект и отправляем на удаленную машину
+                    sh '''tar czf - . | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C \$HOME/deploy"'''
+                }
             }
         }
     }
