@@ -91,7 +91,8 @@ EOF'''
                 subject: "Jenkins Job SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) успешно выполнен!</p><p>Проверить можно тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
                 to: 'alex1436183@gmail.com',
-                mimeType: 'text/html'
+                mimeType: 'text/html',
+                attachmentsPattern: 'reports/report.html'  // Указываем путь к файлу отчета
             )
         }
         failure {
@@ -100,7 +101,8 @@ EOF'''
                 subject: "Jenkins Job FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) завершился с ошибкой!</p><p>Логи можно посмотреть тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
                 to: 'alex1436183@gmail.com',
-                mimeType: 'text/html'
+                mimeType: 'text/html',
+                attachmentsPattern: 'reports/report.html'  // Указываем путь к файлу отчета
             )
         }
     }
