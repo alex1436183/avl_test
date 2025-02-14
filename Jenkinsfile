@@ -12,17 +12,17 @@ pipeline {
         }
         stage('Setup Python Environment') {
             steps {
-                sh '''
+                sh '''#!/bin/bash
                 python3 -m venv venv
-                source venv/bin/activate
+                . venv/bin/activate
                 pip install unittest-xml-reporting pytest pytest-html
                 '''
             }
         }
         stage('Run Calculator Tests') {
             steps {
-                sh '''
-                source venv/bin/activate
+                sh '''#!/bin/bash
+                . venv/bin/activate
                 python3 -m xmlrunner discover -v -o test-results || true
                 '''
             }
@@ -34,8 +34,8 @@ pipeline {
         }
         stage('Run Calculator Interactive') {
             steps {
-                sh '''
-                source venv/bin/activate
+                sh '''#!/bin/bash
+                . venv/bin/activate
                 python3 calculator.py <<EOF
 1
 5
@@ -45,8 +45,8 @@ EOF'''
         }
         stage('Generate Test Report') {
             steps {
-                sh '''
-                source venv/bin/activate
+                sh '''#!/bin/bash
+                . venv/bin/activate
                 mkdir -p reports
                 pytest --html=reports/report.html --self-contained-html || true
                 '''
@@ -67,14 +67,16 @@ EOF'''
         stage('Create Directory for Deployment') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh 'ssh -i "$SSH_KEY" jenkins@minion "mkdir -p ${DEPLOY_DIR}"'
+                    sh '''#!/bin/bash
+                    ssh -i "$SSH_KEY" jenkins@minion "mkdir -p ${DEPLOY_DIR}"'''
                 }
             }
         }
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''tar czf - * | ssh -i "$SSH_KEY" jenkins@minion "tar xzf - -C ${DEPLOY_DIR}"'''
+                    sh '''#!/bin/bash
+                    tar czf - * | ssh -i "$SSH_KEY" jenkins@minion "tar xzf - -C ${DEPLOY_DIR}"'''
                 }
             }
         }
