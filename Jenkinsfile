@@ -1,5 +1,8 @@
 pipeline {
     agent { label 'minion' }
+    environment {
+        DEPLOY_DIR = "${HOME}/deploy"
+    }
     stages {
         stage('Checkout') {
             steps {
@@ -23,13 +26,15 @@ EOF'''
         }
         stage('Create Directory for Deployment') {
             steps {
-                sh 'ssh -i $SSH_KEY jenkins@minion "mkdir -p ${HOME}/deploy"'
+                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh 'ssh -i "$SSH_KEY" jenkins@minion "mkdir -p ${DEPLOY_DIR}"'
+                }
             }
         }
         stage('Deploy') {
             steps {
-                script {
-                    sh '''tar czf - * | ssh -i $SSH_KEY jenkins@minion "tar xzf - -C ${HOME}/deploy"'''
+                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''tar czf - * | ssh -i "$SSH_KEY" jenkins@minion "tar xzf - -C ${DEPLOY_DIR}"'''
                 }
             }
         }
