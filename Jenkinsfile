@@ -12,7 +12,12 @@ pipeline {
         }
         stage('Run Calculator Tests') {
             steps {
-                sh 'python3 -m unittest discover -v'
+                sh 'python3 -m unittest discover -v | tee test-results.xml'
+            }
+            post {
+                always {
+                    junit 'test-results.xml'
+                }
             }
         }
         stage('Run Calculator Interactive') {
@@ -22,6 +27,23 @@ pipeline {
 5
 7
 EOF'''
+            }
+        }
+        stage('Generate Test Report') {
+            steps {
+                sh 'pytest --html=report.html --self-contained-html || true'
+            }
+        }
+        stage('Publish Test Report') {
+            steps {
+                publishHTML (target: [
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'HTML Test Report'
+                ])
             }
         }
         stage('Create Directory for Deployment') {
