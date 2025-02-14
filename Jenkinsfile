@@ -10,19 +10,33 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
+        stage('Setup Python Environment') {
+            steps {
+                sh '''
+                python3 -m venv venv
+                source venv/bin/activate
+                pip install unittest-xml-reporting pytest pytest-html
+                '''
+            }
+        }
         stage('Run Calculator Tests') {
             steps {
-                sh 'python3 -m unittest discover -v | tee test-results.xml'
+                sh '''
+                source venv/bin/activate
+                python3 -m xmlrunner discover -v -o test-results || true
+                '''
             }
             post {
                 always {
-                    junit 'test-results.xml'
+                    junit 'test-results/*.xml'
                 }
             }
         }
         stage('Run Calculator Interactive') {
             steps {
-                sh '''python3 calculator.py <<EOF
+                sh '''
+                source venv/bin/activate
+                python3 calculator.py <<EOF
 1
 5
 7
@@ -31,7 +45,11 @@ EOF'''
         }
         stage('Generate Test Report') {
             steps {
-                sh 'pytest --html=report.html --self-contained-html || true'
+                sh '''
+                source venv/bin/activate
+                mkdir -p reports
+                pytest --html=reports/report.html --self-contained-html || true
+                '''
             }
         }
         stage('Publish Test Report') {
@@ -40,7 +58,7 @@ EOF'''
                     allowMissing: true,
                     alwaysLinkToLastBuild: true,
                     keepAll: true,
-                    reportDir: '.',
+                    reportDir: 'reports',
                     reportFiles: 'report.html',
                     reportName: 'HTML Test Report'
                 ])
