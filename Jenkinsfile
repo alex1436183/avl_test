@@ -1,74 +1,109 @@
 pipeline {
     agent { label 'minion' }
-
     environment {
-        REPO_URL = 'https://github.com/alex1436183/tms_test.git'
-        BRANCH_NAME = 'main'
-        VENV_DIR = 'venv'
+        DEPLOY_DIR = "${HOME}/deploy"
     }
-
     stages {
-        stage('Clone repository') {
+        stage('Checkout') {
             steps {
-                cleanWs() // Удаляем старые файлы
-                git branch: "${BRANCH_NAME}", url: "${REPO_URL}"
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/alex1436183/avl_test'
             }
         }
-        
         stage('Setup Python Environment') {
             steps {
-                sh '''
-                python3 -m venv ${VENV_DIR}
-                . ${VENV_DIR}/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
+                sh '''#!/bin/bash
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install unittest-xml-reporting pytest pytest-html
                 '''
             }
         }
-
-        stage('Run Tests') {
+        stage('Run Calculator Tests') {
             steps {
-                sh '''
-                . ${VENV_DIR}/bin/activate
-                pytest tests/ --maxfail=1 --disable-warnings
+                sh '''#!/bin/bash
+                . venv/bin/activate
+                python3 -m xmlrunner discover -v -o test-results || true
+                '''
+            }
+            post {
+                always {
+                    junit 'test-results/*.xml'
+                }
+            }
+        }
+        stage('Run Calculator Interactive') {
+            steps {
+                sh '''#!/bin/bash
+                . venv/bin/activate
+                python3 calculator.py <<EOF
+1
+5
+7
+EOF'''
+            }
+        }
+        stage('Generate Test Report') {
+            steps {
+                sh '''#!/bin/bash
+                . venv/bin/activate
+                mkdir -p reports
+                pytest --html=reports/report.html --self-contained-html || true
                 '''
             }
         }
-
-        stage('Start Application') {
+        stage('Publish Test Report') {
             steps {
-                sh '''
-                . ${VENV_DIR}/bin/activate
-                nohup python app.py > app.log 2>&1 &
-                echo $! > app.pid
-                '''
+                publishHTML (target: [
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'reports',
+                    reportFiles: 'report.html',
+                    reportName: 'HTML Test Report'
+                ])
             }
         }
-
-        stage('Check Application') {
+        stage('Create Directory for Deployment') {
             steps {
-                sh '''
-                sleep 5
-                curl -v http://localhost:8080
-                '''
+                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''#!/bin/bash
+                    ssh -i "$SSH_KEY" jenkins@minion "mkdir -p ${DEPLOY_DIR}"'''
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'agent-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''#!/bin/bash
+                    tar czf - * | ssh -i "$SSH_KEY" jenkins@minion "tar xzf - -C ${DEPLOY_DIR}"'''
+                }
             }
         }
     }
-
     post {
         always {
-            sh '''
-            if [ -f app.pid ]; then
-                kill $(cat app.pid) || true
-                rm -f app.pid
-            fi
-            '''
-        }
-        failure {
-            echo 'Pipeline failed!'
+            echo 'Build finished'
         }
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Build was successful!'
+            emailext(
+                subject: "Jenkins Job SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) успешно выполнен!</p><p>Проверить можно тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
+                to: 'alex1436183@gmail.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'reports/report.html'  // Указываем путь к файлу отчета
+            )
+        }
+        failure {
+            echo 'Build failed!'
+            emailext(
+                subject: "Jenkins Job FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "<p>Jenkins job <b>${env.JOB_NAME}</b> (<b>${env.BUILD_NUMBER}</b>) завершился с ошибкой!</p><p>Логи можно посмотреть тут: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>",
+                to: 'alex1436183@gmail.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'reports/report.html'  // Указываем путь к файлу отчета
+            )
         }
     }
 }
