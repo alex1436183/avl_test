@@ -10,6 +10,7 @@ pipeline {
     stages {
         stage('Clone repository') {
             steps {
+                cleanWs() // Удаляем старые файлы
                 git branch: "${BRANCH_NAME}", url: "${REPO_URL}"
             }
         }
