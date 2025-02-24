@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'minion' }
     environment {
-        DEPLOY_DIR = "${HOME}/deploy"
+        DEPLOY_DIR = "/home/jenkins-agent/deploy"
     }
     stages {
         stage('Checkout') {
